@@ -5,9 +5,17 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine } from 'recharts';
 import { Progress } from "@/components/ui/progress"
 
+// Simulated database of materials
+const materials = {
+  'steel': { name: 'Steel', tenacidadeFratura: 50, dureza: 150 },
+  'aluminum': { name: 'Aluminum', tenacidadeFratura: 30, dureza: 60 },
+  'titanium': { name: 'Titanium', tenacidadeFratura: 70, dureza: 200 },
+};
+
 const Index: React.FC = () => {
   const [force, setForce] = useState<string>('');
   const [area, setArea] = useState<string>('');
+  const [material, setMaterial] = useState<string>('steel');
   const [result, setResult] = useState<string>('');
   const [sensorData, setSensorData] = useState<Array<{ time: string; value: number }>>([]);
   const [simulationProgress, setSimulationProgress] = useState<number>(0);
@@ -26,6 +34,17 @@ const Index: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const simulateSensorReading = () => {
+    // Simula a leitura de um sensor de força
+    return Math.random() * 1000; // Força aleatória entre 0 e 1000 N
+  };
+
+  const simulateDurometer = () => {
+    // Simula a leitura de um durômetro
+    const selectedMaterial = materials[material];
+    return selectedMaterial.dureza + (Math.random() - 0.5) * 20; // Adiciona uma variação de ±10
+  };
+
   const handleSimulation = () => {
     setIsSimulating(true);
     setSimulationProgress(0);
@@ -37,13 +56,15 @@ const Index: React.FC = () => {
     const areaValue = parseFloat(area) || 0.0045; // Use input area or default to 0.0045m²
     const comprimento_trinca_metros = 0.001;
     const fator_geometrico = 1;
-    const tenacidade_fratura = 150; // MPa√m
+    const selectedMaterial = materials[material];
+    const tenacidade_fratura = selectedMaterial.tenacidadeFratura;
 
     const newSimulationData: Array<{ force: number; K: number }> = [];
 
     const runSimulationStep = (step: number) => {
       setTimeout(() => {
-        const currentForce = (step / simulationSteps) * maxForce;
+        const currentForce = simulateSensorReading(); // Simula leitura do sensor
+        const dureza = simulateDurometer(); // Simula leitura do durômetro
         const tensao = currentForce / areaValue;
         const fator_intensidade_tensao = fator_geometrico * tensao * Math.sqrt(Math.PI * comprimento_trinca_metros);
 
@@ -54,9 +75,9 @@ const Index: React.FC = () => {
         if (step === simulationSteps) {
           // Final step: set result
           if (fator_intensidade_tensao >= tenacidade_fratura) {
-            setResult(`Fratura ocorrerá: Fator da intensidade máximo = ${fator_intensidade_tensao.toFixed(2)} MPa·√m, que é maior que a tenacidade à fratura = ${tenacidade_fratura} MPa·√m`);
+            setResult(`Fratura provável: Fator de intensidade máximo = ${fator_intensidade_tensao.toFixed(2)} MPa·√m, que é maior que a tenacidade à fratura = ${tenacidade_fratura} MPa·√m`);
           } else {
-            setResult(`Fratura não ocorrerá: Fator da intensidade máximo = ${fator_intensidade_tensao.toFixed(2)} MPa·√m, que é menor que a tenacidade à fratura = ${tenacidade_fratura} MPa·√m`);
+            setResult(`Fratura improvável: Fator de intensidade máximo = ${fator_intensidade_tensao.toFixed(2)} MPa·√m, que é menor que a tenacidade à fratura = ${tenacidade_fratura} MPa·√m`);
           }
           setIsSimulating(false);
         } else {
@@ -70,12 +91,12 @@ const Index: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">Análise de Fraturas em Materiais</h1>
+      <h1 className="text-3xl font-bold mb-4">Análise de Fraturas em Materiais (Simulação IoT)</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>Simulador de Fratura</CardTitle>
-            <CardDescription>Insira os parâmetros para simular a fratura</CardDescription>
+            <CardTitle>Simulador de Fratura IoT</CardTitle>
+            <CardDescription>Configure os parâmetros para simular a fratura</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -98,6 +119,19 @@ const Index: React.FC = () => {
                   onChange={(e) => setArea(e.target.value)}
                   placeholder="Ex: 0.0045"
                 />
+              </div>
+              <div>
+                <label htmlFor="material" className="block text-sm font-medium text-gray-700">Material</label>
+                <select
+                  id="material"
+                  value={material}
+                  onChange={(e) => setMaterial(e.target.value)}
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                >
+                  {Object.entries(materials).map(([key, value]) => (
+                    <option key={key} value={key}>{value.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </CardContent>
@@ -155,7 +189,7 @@ const Index: React.FC = () => {
               <YAxis label={{ value: 'Fator de Intensidade de Tensão (MPa·√m)', angle: -90, position: 'insideLeft' }} />
               <Tooltip />
               <Legend />
-              <ReferenceLine y={150} label="Tenacidade à Fratura" stroke="red" strokeDasharray="3 3" />
+              <ReferenceLine y={materials[material].tenacidadeFratura} label="Tenacidade à Fratura" stroke="red" strokeDasharray="3 3" />
               <Line type="monotone" dataKey="K" stroke="#82ca9d" name="Fator de Intensidade de Tensão" />
             </LineChart>
           </CardContent>
