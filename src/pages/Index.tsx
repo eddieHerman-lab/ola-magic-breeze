@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine } from 'recharts';
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+import SimulationForm from '@/components/SimulationForm';
+import SensorDataChart from '@/components/SensorDataChart';
 
-// Simulated database of materials
 const materials = {
   'steel': { name: 'Steel', tenacidadeFratura: 50, dureza: 150 },
   'aluminum': { name: 'Aluminum', tenacidadeFratura: 30, dureza: 60 },
@@ -93,69 +92,17 @@ const Index: React.FC = () => {
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-4">Análise de Fraturas em Materiais (Simulação IoT)</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Simulador de Fratura IoT</CardTitle>
-            <CardDescription>Configure os parâmetros para simular a fratura</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="force" className="block text-sm font-medium text-gray-700">Força Máxima (N)</label>
-                <Input
-                  id="force"
-                  type="number"
-                  value={force}
-                  onChange={(e) => setForce(e.target.value)}
-                  placeholder="Ex: 1000"
-                />
-              </div>
-              <div>
-                <label htmlFor="area" className="block text-sm font-medium text-gray-700">Área (m²)</label>
-                <Input
-                  id="area"
-                  type="number"
-                  value={area}
-                  onChange={(e) => setArea(e.target.value)}
-                  placeholder="Ex: 0.0045"
-                />
-              </div>
-              <div>
-                <label htmlFor="material" className="block text-sm font-medium text-gray-700">Material</label>
-                <select
-                  id="material"
-                  value={material}
-                  onChange={(e) => setMaterial(e.target.value)}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                >
-                  {Object.entries(materials).map(([key, value]) => (
-                    <option key={key} value={key}>{value.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={handleSimulation} disabled={isSimulating}>
-              {isSimulating ? 'Simulando...' : 'Simular'}
-            </Button>
-          </CardFooter>
-        </Card>
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Dados do Sensor em Tempo Real</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <LineChart width={400} height={200} data={sensorData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="time" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="value" stroke="#8884d8" />
-            </LineChart>
-          </CardContent>
-        </Card>
+        <SimulationForm
+          force={force}
+          setForce={setForce}
+          area={area}
+          setArea={setArea}
+          material={material}
+          setMaterial={setMaterial}
+          handleSimulation={handleSimulation}
+          isSimulating={isSimulating}
+        />
+        <SensorDataChart sensorData={sensorData} />
       </div>
       {isSimulating && (
         <Card className="mt-4 w-full">
@@ -183,15 +130,17 @@ const Index: React.FC = () => {
             <CardTitle>Gráfico de Simulação</CardTitle>
           </CardHeader>
           <CardContent>
-            <LineChart width={600} height={300} data={simulationData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="force" label={{ value: 'Força (N)', position: 'insideBottom', offset: -5 }} />
-              <YAxis label={{ value: 'Fator de Intensidade de Tensão (MPa·√m)', angle: -90, position: 'insideLeft' }} />
-              <Tooltip />
-              <Legend />
-              <ReferenceLine y={materials[material].tenacidadeFratura} label="Tenacidade à Fratura" stroke="red" strokeDasharray="3 3" />
-              <Line type="monotone" dataKey="K" stroke="#82ca9d" name="Fator de Intensidade de Tensão" />
-            </LineChart>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={simulationData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="force" label={{ value: 'Força (N)', position: 'insideBottom', offset: -5 }} />
+                <YAxis label={{ value: 'Fator de Intensidade de Tensão (MPa·√m)', angle: -90, position: 'insideLeft' }} />
+                <Tooltip />
+                <Legend />
+                <ReferenceLine y={materials[material].tenacidadeFratura} label="Tenacidade à Fratura" stroke="red" strokeDasharray="3 3" />
+                <Line type="monotone" dataKey="K" stroke="#82ca9d" name="Fator de Intensidade de Tensão" />
+              </LineChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       )}
