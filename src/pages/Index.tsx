@@ -5,13 +5,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { Progress } from "@/components/ui/progress"
 
-const Index = () => {
-  const [force, setForce] = useState('');
-  const [area, setArea] = useState('');
-  const [result, setResult] = useState('');
-  const [sensorData, setSensorData] = useState([]);
-  const [simulationProgress, setSimulationProgress] = useState(0);
-  const [isSimulating, setIsSimulating] = useState(false);
+const Index: React.FC = () => {
+  const [force, setForce] = useState<string>('');
+  const [area, setArea] = useState<string>('');
+  const [result, setResult] = useState<string>('');
+  const [sensorData, setSensorData] = useState<Array<{ time: string; value: number }>>([]);
+  const [simulationProgress, setSimulationProgress] = useState<number>(0);
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
 
   useEffect(() => {
     // Simular dados do sensor em tempo real
@@ -33,7 +33,7 @@ const Index = () => {
     const simulationSteps = 5;
     const stepDuration = 1000; // 1 second per step
 
-    const runSimulationStep = (step) => {
+    const runSimulationStep = (step: number) => {
       setTimeout(() => {
         setSimulationProgress((step / simulationSteps) * 100);
 
