@@ -3,12 +3,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { Progress } from "@/components/ui/progress"
 
 const Index = () => {
   const [force, setForce] = useState('');
   const [area, setArea] = useState('');
   const [result, setResult] = useState('');
   const [sensorData, setSensorData] = useState([]);
+  const [simulationProgress, setSimulationProgress] = useState(0);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   useEffect(() => {
     // Simular dados do sensor em tempo real
@@ -23,21 +26,42 @@ const Index = () => {
   }, []);
 
   const handleSimulation = () => {
-    // Implementar a lógica de simulação baseada no código Python
-    const forceValue = parseFloat(force);
-    const areaValue = parseFloat(area);
-    const tensao = forceValue / areaValue;
-    const comprimento_trinca_metros = 0.001;
-    const fator_geometrico = 1;
-    const tenacidade_fratura = 150;
+    setIsSimulating(true);
+    setSimulationProgress(0);
+    setResult('');
 
-    const fator_intensidade_tensao = fator_geometrico * tensao * Math.sqrt(Math.PI * comprimento_trinca_metros);
+    const simulationSteps = 5;
+    const stepDuration = 1000; // 1 second per step
 
-    if (fator_intensidade_tensao >= tenacidade_fratura) {
-      setResult(`Fratura ocorrerá: Fator da intensidade = ${fator_intensidade_tensao.toFixed(2)} Pa·sqrt(m), que é maior que a tenacidade à fratura = ${tenacidade_fratura} Pa·sqrt(m)`);
-    } else {
-      setResult(`Fratura não ocorrerá: Fator da intensidade = ${fator_intensidade_tensao.toFixed(2)} Pa·sqrt(m), que é menor que a tenacidade à fratura = ${tenacidade_fratura} Pa·sqrt(m)`);
-    }
+    const runSimulationStep = (step) => {
+      setTimeout(() => {
+        setSimulationProgress((step / simulationSteps) * 100);
+
+        if (step === simulationSteps) {
+          // Final step: calculate and set result
+          const forceValue = parseFloat(force);
+          const areaValue = parseFloat(area);
+          const tensao = forceValue / areaValue;
+          const comprimento_trinca_metros = 0.001;
+          const fator_geometrico = 1;
+          const tenacidade_fratura = 150;
+
+          const fator_intensidade_tensao = fator_geometrico * tensao * Math.sqrt(Math.PI * comprimento_trinca_metros);
+
+          if (fator_intensidade_tensao >= tenacidade_fratura) {
+            setResult(`Fratura ocorrerá: Fator da intensidade = ${fator_intensidade_tensao.toFixed(2)} Pa·sqrt(m), que é maior que a tenacidade à fratura = ${tenacidade_fratura} Pa·sqrt(m)`);
+          } else {
+            setResult(`Fratura não ocorrerá: Fator da intensidade = ${fator_intensidade_tensao.toFixed(2)} Pa·sqrt(m), que é menor que a tenacidade à fratura = ${tenacidade_fratura} Pa·sqrt(m)`);
+          }
+
+          setIsSimulating(false);
+        } else {
+          runSimulationStep(step + 1);
+        }
+      }, stepDuration);
+    };
+
+    runSimulationStep(1);
   };
 
   return (
@@ -74,7 +98,9 @@ const Index = () => {
             </div>
           </CardContent>
           <CardFooter>
-            <Button onClick={handleSimulation}>Simular</Button>
+            <Button onClick={handleSimulation} disabled={isSimulating}>
+              {isSimulating ? 'Simulando...' : 'Simular'}
+            </Button>
           </CardFooter>
         </Card>
         <Card className="w-full">
@@ -93,6 +119,16 @@ const Index = () => {
           </CardContent>
         </Card>
       </div>
+      {isSimulating && (
+        <Card className="mt-4 w-full">
+          <CardHeader>
+            <CardTitle>Progresso da Simulação</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Progress value={simulationProgress} className="w-full" />
+          </CardContent>
+        </Card>
+      )}
       {result && (
         <Card className="mt-4 w-full">
           <CardHeader>
